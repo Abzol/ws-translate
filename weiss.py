@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import sys
+import os.path
 
 COLORS = {
     'Yellow': (112, 124, 26),
@@ -18,7 +19,7 @@ COLORS = {
 }
 
 if __name__ == '__main__':
-    filename = sys.argv[1]
+    path, filename = os.path.split(sys.argv[1])
     cardno = filename.split('.')[0].replace('_', '/')
 
     #fetch some card info
@@ -57,9 +58,9 @@ if __name__ == '__main__':
     }
 
     #setup pillow
-    im = Image.open(filename)
+    im = Image.open(os.path.join(path, filename))
     #rotate climax cards 90 degrees counterclockwise
-    if (cardtype == "Climax"):
+    if (cardtype == 'Climax'):
         im = im.rotate(90, expand = 1)
     font = ImageFont.truetype('georgia.ttf', size=14)
     draw = ImageDraw.Draw(im)
@@ -81,14 +82,14 @@ if __name__ == '__main__':
                 c += 1
                 if (c > len(words)):
                     break
-                width = draw.textsize(" ".join(words[0:c]), font)[0]
+                width = draw.textsize(' '.join(words[0:c]), font)[0]
             c -= 1
-            lines.append(" ".join(words[0:c]))
+            lines.append(' '.join(words[0:c]))
             words = words[c:]
         return '\n'.join(lines)
 
     #set some anchors
-    if (cardtype == "Character"):
+    if (cardtype == 'Character'):
         effectAnchorBottom = 0.876
         effectAnchorLeft = 0.05
         effectAreaWidth = 0.9
@@ -96,7 +97,7 @@ if __name__ == '__main__':
         nameAnchorCenter = 0.577
         nameAreaWidth = 0.466
         nameAreaHeight = 0.0356
-    elif (cardtype == "Event"):
+    elif (cardtype == 'Event'):
         effectAnchorBottom = 0.9
         effectAnchorLeft = 0.05
         effectAreaWidth = 0.9
@@ -104,7 +105,7 @@ if __name__ == '__main__':
         nameAnchorCenter = 0.577
         nameAreaWidth = 0.466
         nameAreaHeight = 0.0356
-    elif (cardtype == "Climax"):
+    elif (cardtype == 'Climax'):
         effectAnchorBottom = 0.968
         effectAnchorLeft = 0.0228
         effectAreaWidth = 0.3462
@@ -114,7 +115,7 @@ if __name__ == '__main__':
         nameAreaHeight = 0.06
 
     #add reminder text for Climax cards, since HOTC leaves it out
-    if cardtype == "Climax":
+    if cardtype == 'Climax':
         for trigger in triggers:
             text += TRIGGERS[trigger]
 
@@ -186,7 +187,9 @@ if __name__ == '__main__':
             im.paste(traitCanvas,(int((0.8020-(0.2340*i)-((traitCanvas.size[0]/2)/im.size[0]))*im.size[0]), int(0.9452*im.size[1])+2))
 
     #rotate climax cards back to normal orientation
-    if (cardtype == "Climax"):
+    if (cardtype == 'Climax'):
         im = im.rotate(-90, expand = 1)
 
-    im.save(filename.split('.')[0]+ " EN.jpg")
+    with open(os.path.join(path, filename.split('.')[0]+ ' EN.jpg'), 'wb') as f:
+        im.save(f, format='jpeg')
+    #im.save(os.path.join(path, filename.split('.')[0]+ " EN.jpg"))
