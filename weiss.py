@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 import re
 import sys
 import os.path
+import html
 
 COLORS = {
     'Yellow': (112, 124, 26),
@@ -120,6 +121,7 @@ if __name__ == '__main__':
             text += TRIGGERS[trigger]
 
     #split the effect text
+    text = html.unescape(text)
     text = splitText(draw, text, font)
     textheight = int(draw.multiline_textsize(text, font)[1])
 
