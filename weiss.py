@@ -121,53 +121,55 @@ if __name__ == '__main__':
             text += TRIGGERS[trigger]
 
     #split the effect text
-    text = html.unescape(text)
-    text = splitText(draw, text, font)
-    textheight = int(draw.multiline_textsize(text, font)[1])
+    if not(text.startswith('--None--')):
+        text = html.unescape(text)
+        text = splitText(draw, text, font)
+        textheight = int(draw.multiline_textsize(text, font)[1])
 
-    #glass pane effect to hide japanese effect text
-    im_blur = im.copy().filter(ImageFilter.GaussianBlur(5))
-    white = Image.new('RGB', im.size, (255, 255, 255))
-    im_blur = Image.blend(im_blur, white, 0.3)
-    im_blur = im_blur.crop((int(effectAnchorLeft * im.size[0]),
-                            int(effectAnchorBottom * im.size[1]) - textheight,
-                            int((effectAnchorLeft + effectAreaWidth) *im.size[0]),
-                            int(effectAnchorBottom * im.size[1])))
-    im.paste(im_blur,(int(effectAnchorLeft * im.size[0]),int(effectAnchorBottom * im.size[1]) - textheight))
+        #glass pane effect to hide japanese effect text
+        im_blur = im.copy().filter(ImageFilter.GaussianBlur(5))
+        white = Image.new('RGB', im.size, (255, 255, 255))
+        im_blur = Image.blend(im_blur, white, 0.3)
+        im_blur = im_blur.crop((int(effectAnchorLeft * im.size[0]),
+                                int(effectAnchorBottom * im.size[1]) - textheight,
+                                int((effectAnchorLeft + effectAreaWidth) *im.size[0]),
+                                int(effectAnchorBottom * im.size[1])))
+        im.paste(im_blur,(int(effectAnchorLeft * im.size[0]),int(effectAnchorBottom * im.size[1]) - textheight))
 
-    #draw the english effect text
-    draw.multiline_text((int(effectAnchorLeft*im.size[0] - 1), int(effectAnchorBottom * im.size[1]) - textheight - 1), text, fill=(255, 255, 255), font=font)
-    draw.multiline_text((int(effectAnchorLeft*im.size[0] - 1), int(effectAnchorBottom * im.size[1]) - textheight + 1), text, fill=(255, 255, 255), font=font)
-    draw.multiline_text((int(effectAnchorLeft*im.size[0] + 2), int(effectAnchorBottom * im.size[1]) - textheight - 1), text, fill=(255, 255, 255), font=font)
-    draw.multiline_text((int(effectAnchorLeft*im.size[0] + 2), int(effectAnchorBottom * im.size[1]) - textheight + 1), text, fill=(255, 255, 255), font=font)
-    draw.multiline_text((int(effectAnchorLeft*im.size[0]), int(effectAnchorBottom * im.size[1]) - textheight), text, fill=(128, 128, 128), font=font)
-    draw.multiline_text((int(effectAnchorLeft*im.size[0] + 1), int(effectAnchorBottom * im.size[1]) - textheight), text, fill=(0, 0, 0), font=font)
+        #draw the english effect text
+        draw.multiline_text((int(effectAnchorLeft*im.size[0] - 1), int(effectAnchorBottom * im.size[1]) - textheight - 1), text, fill=(255, 255, 255), font=font)
+        draw.multiline_text((int(effectAnchorLeft*im.size[0] - 1), int(effectAnchorBottom * im.size[1]) - textheight + 1), text, fill=(255, 255, 255), font=font)
+        draw.multiline_text((int(effectAnchorLeft*im.size[0] + 2), int(effectAnchorBottom * im.size[1]) - textheight - 1), text, fill=(255, 255, 255), font=font)
+        draw.multiline_text((int(effectAnchorLeft*im.size[0] + 2), int(effectAnchorBottom * im.size[1]) - textheight + 1), text, fill=(255, 255, 255), font=font)
+        draw.multiline_text((int(effectAnchorLeft*im.size[0]), int(effectAnchorBottom * im.size[1]) - textheight), text, fill=(128, 128, 128), font=font)
+        draw.multiline_text((int(effectAnchorLeft*im.size[0] + 1), int(effectAnchorBottom * im.size[1]) - textheight), text, fill=(0, 0, 0), font=font)
 
-    #effect formatting bonuses
-    lines = text.split('\n')
-    for i in range(len(lines)):
-        if lines[i].startswith('[A]') or lines[i].startswith('[C]') or lines[i].startswith('[S]'):
-            offset = draw.multiline_textsize('#' + '\n.'*(len(lines)-i-1), font)[1]
-            draw.rectangle((effectAnchorLeft*im.size[0]-1, (effectAnchorBottom*im.size[1])-offset-0.5, effectAnchorLeft*im.size[0]+20, (effectAnchorBottom * im.size[1]) - offset + 15), fill=(0, 0, 0))
-            draw.text((effectAnchorLeft*im.size[0], (effectAnchorBottom*im.size[1])-offset-1), lines[i][0:3], fill=(255, 255, 255), font=font)
-            draw.text((effectAnchorLeft*im.size[0]+1, (effectAnchorBottom*im.size[1])-offset-1), lines[i][0:3], fill=(255, 255, 255), font=font)
-        if 'CX COMBO' in lines[i]:
-            textsize = draw.multiline_textsize('CX COMBO' + '\n'*(len(lines)-i-1), font)
-            offset = textsize[1]
-            width = textsize[0]
-            draw.rectangle((effectAnchorLeft*im.size[0]+23, (effectAnchorBottom*im.size[1])-offset-0.5, effectAnchorLeft*im.size[0]+width+23, (effectAnchorBottom * im.size[1]) - offset + 15), fill=(255, 0, 0))
-            draw.text((effectAnchorLeft*im.size[0]+23, (effectAnchorBottom*im.size[1])-offset), 'CX COMBO', fill=(255, 255, 255), font=font)
-            draw.text((effectAnchorLeft*im.size[0]+24, (effectAnchorBottom*im.size[1])-offset), 'CX COMBO', fill=(255, 255, 255), font=font)
-        if (re.search('\[\w\]', lines[i][3:]) != None):
-            positions = [m.start() for m in re.finditer('\[\w\]', lines[i][3:])]
-            for j in positions:
-                textsize = draw.multiline_textsize(lines[i][0:j+3] + '\n'*(len(lines)-i-1), font)
+        #effect formatting bonuses
+        lines = text.split('\n')
+        for i in range(len(lines)):
+            if lines[i].startswith('[A]') or lines[i].startswith('[C]') or lines[i].startswith('[S]'):
+                offset = draw.multiline_textsize('#' + '\n.'*(len(lines)-i-1), font)[1]
+                draw.rectangle((effectAnchorLeft*im.size[0]-1, (effectAnchorBottom*im.size[1])-offset-0.5, effectAnchorLeft*im.size[0]+20, (effectAnchorBottom * im.size[1]) - offset + 15), fill=(0, 0, 0))
+                draw.text((effectAnchorLeft*im.size[0], (effectAnchorBottom*im.size[1])-offset-1), lines[i][0:3], fill=(255, 255, 255), font=font)
+                draw.text((effectAnchorLeft*im.size[0]+1, (effectAnchorBottom*im.size[1])-offset-1), lines[i][0:3], fill=(255, 255, 255), font=font)
+            if 'CX COMBO' in lines[i]:
+                textsize = draw.multiline_textsize('CX COMBO' + '\n'*(len(lines)-i-1), font)
                 offset = textsize[1]
                 width = textsize[0]
-                draw.rectangle((effectAnchorLeft*im.size[0]-1+width, (effectAnchorBottom*im.size[1])-offset-0.5, effectAnchorLeft*im.size[0]+width+20, (effectAnchorBottom * im.size[1]) - offset + 15), fill=(0, 0, 0))
-                draw.text((effectAnchorLeft*im.size[0]+width, (effectAnchorBottom*im.size[1])-offset-1), lines[i][j+3:j+6], fill=(255, 255, 255), font=font)
-                draw.text((effectAnchorLeft*im.size[0]+width+1, (effectAnchorBottom*im.size[1])-offset-1), lines[i][j+3:j+6], fill=(255, 255, 255), font=font)
- 
+                draw.rectangle((effectAnchorLeft*im.size[0]+23, (effectAnchorBottom*im.size[1])-offset-0.5, effectAnchorLeft*im.size[0]+width+23, (effectAnchorBottom * im.size[1]) - offset + 15), fill=(255, 0, 0))
+                draw.text((effectAnchorLeft*im.size[0]+23, (effectAnchorBottom*im.size[1])-offset), 'CX COMBO', fill=(255, 255, 255), font=font)
+                draw.text((effectAnchorLeft*im.size[0]+24, (effectAnchorBottom*im.size[1])-offset), 'CX COMBO', fill=(255, 255, 255), font=font)
+            if (re.search('\[\w\]', lines[i][3:]) != None):
+                positions = [m.start() for m in re.finditer('\[\w\]', lines[i][3:])]
+                for j in positions:
+                    textsize = draw.multiline_textsize(lines[i][0:j+3] + '\n'*(len(lines)-i-1), font)
+                    offset = textsize[1]
+                    width = textsize[0]
+                    draw.rectangle((effectAnchorLeft*im.size[0]-1+width, (effectAnchorBottom*im.size[1])-offset-0.5, effectAnchorLeft*im.size[0]+width+20, (effectAnchorBottom * im.size[1]) - offset + 15), fill=(0, 0, 0))
+                    draw.text((effectAnchorLeft*im.size[0]+width, (effectAnchorBottom*im.size[1])-offset-1), lines[i][j+3:j+6], fill=(255, 255, 255), font=font)
+                    draw.text((effectAnchorLeft*im.size[0]+width+1, (effectAnchorBottom*im.size[1])-offset-1), lines[i][j+3:j+6], fill=(255, 255, 255), font=font)
+    #--end the 'if card text isn't --None--' block--
+
     #name
     font = ImageFont.truetype('georgia.ttf', size=24)
     nameCanvas = Image.new('RGBA', draw.textsize(name, font), COLORS[color])
