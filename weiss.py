@@ -38,7 +38,7 @@ TRIGGERS = {
 }
 
 #setup pillow
-def renderCard(path, filename, cardinfo):
+def renderCard(path, filename, cardinfo, output=''):
 
     name = cardinfo['name']
     color = cardinfo['color']
@@ -183,7 +183,7 @@ def renderCard(path, filename, cardinfo):
     if (cardtype == 'Climax'):
         im = im.rotate(-90, expand = 1)
 
-    with open(os.path.join(path, filename.split('.')[0]+ ' EN.jpg'), 'wb') as f:
+    with open(os.path.join(path, output, filename.split('.')[0]+ ' EN.jpg'), 'wb') as f:
         im.save(f, format='jpeg')
     #im.save(os.path.join(path, filename.split('.')[0]+ " EN.jpg"))
 
@@ -218,12 +218,23 @@ def translateCard(filename):
     path, filename = os.path.split(filename)
     cardno = filename.split('.')[0].replace('_', '/')
     cardinfo = getCardText(cardno)
-    renderCard(path, filename, cardinfo)
+    renderCard(path, filename, cardinfo, output='./EN')
 
 if __name__ == '__main__':
     if (os.path.isdir(sys.argv[1])):
         filenames = os.listdir(sys.argv[1])
+        try:
+            os.mkdir(sys.argv[1] + 'EN')
+        except FileExistsError:
+            pass
+        index = 0
         for filename in filenames:
-            translateCard(os.path.join(sys.argv[1], filename))
+            if os.path.isfile(os.path.join(sys.argv[1], filename)):
+                index += 1
+                if os.path.isfile(os.path.join(sys.argv[1], 'EN', filename.split('.')[0] + ' EN.jpg')):
+                    print('(%d/%d) Skipping %s, already done.' % (index, len(filenames) - 1, filename))
+                    continue
+                print('(%d/%d) Translating %s' % (index, len(filenames) - 1, filename))
+                translateCard(os.path.join(sys.argv[1], filename))
     else:
         translateCard(sys.argv[1])
