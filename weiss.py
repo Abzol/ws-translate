@@ -11,6 +11,10 @@ import sys
 import os.path
 import html
 
+IMAGESIZE = (500, 702)
+
+STOCKNUMBERS = '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
+
 COLORS = {
     'Yellow': (112, 124, 26),
     'Green': (49, 75, 46),
@@ -19,75 +23,37 @@ COLORS = {
     'Purple': (81, 32, 61) 
 }
 
-if __name__ == '__main__':
-    path, filename = os.path.split(sys.argv[1])
-    cardno = filename.split('.')[0].replace('_', '/')
+TRIGGERS = {
+    'Draw': '\n(Draw): When this triggers, you may draw one card from your deck.',
+    'Standby': '\n(Standby): When this triggers, you may choose one character with a level up to one higher than you in your waiting room, and put it on any slot on stage, Rested.',
+    'Bounce': '\n(Bounce): When this triggers, you may return one of your opponents characters to their hand.',
+    'Shot': '\n(Shot): If this attack gets damage canceled, deal one damage. (This damage can be canceled).',
+    'Treasure': '\n(Treasure): When this triggers, return it to your hand. You may put the top card of your deck into your stock.',
+    'Door': '\n(Door): When this triggers, you may return one character from your Waiting Room to your hand.',
+    'Salvage': '\n(Door): When this triggers, you may return one character from your Waiting Room to your hand.',
+    'Gate': '\n(Gate): When this triggers, you may return one climax from your Waiting Room to your hand.',
+    'Stock': '\n(Stock): When this triggers, you may put the top card of your deck into your Stock.',
+    'Soul': '', #You should learn this one yourself
+    '2': '' #thanks, HOTC
+}
 
-    #fetch some card info
-    r = requests.get('https://www.heartofthecards.com/code/cardlist.html?card=WS_' + cardno)
-    soup = BeautifulSoup(r.text, 'html.parser')
-    text = str(soup.find_all('td', class_='cards3')[2]).replace('<br/>','\n') #use a sensible linebreak character (requests or bs4 handles closing <br> tag for you)
-    text = re.sub('<[^<]+?>','',text) #remove all html tags
-    name = soup.find('div', class_='tcgrcontainer').next_sibling.next_sibling
-    name = name.next_element.next_sibling.next_element.next_element.next_element.next_element
-    cards2 = soup.find_all('td', class_='cards2')
-    color = cards2[3].contents[0]
-    cardtype = cards2[5].contents[0]
-    #hotc uses two standards here
-    if (len(cards2) == 12):
-        traits = cards2[11].contents[0].split(',')
-    if (len(cards2) == 13):
-        traits = [cards2[10].contents[0], cards2[12].contents[0]]
-    #if climax, find triggers
-    if (cardtype == "Climax"):
-        if (len(cards2) == 12):
-            triggers = cards2[10].contents[0].split()
-        if (len(cards2) == 13):
-            triggers = cards2[11].contents[0].split()
+#setup pillow
+def renderCard(path, filename, cardinfo):
 
-    TRIGGERS = {
-        'Draw': '\n(Draw): When this triggers, you may draw one card from your deck.',
-        'Standby': '\n(Standby): When this triggers, you may choose one character with a level up to one higher than you in your waiting room, and put it on any slot on stage, Rested.',
-        'Bounce': '\n(Bounce): When this triggers, you may return one of your opponents characters to their hand.',
-        'Shot': '\n(Shot): If this attack gets damage canceled, deal one damage. (This damage can be canceled).',
-        'Treasure': '\n(Treasure): When this triggers, return it to your hand. You may put the top card of your deck into your stock.',
-        'Door': '\n(Door): When this triggers, you may return one character from your Waiting Room to your hand.',
-        'Gate': '\n(Gate): When this triggers, you may return one climax from your Waiting Room to your hand.',
-        'Stock': '\n(Stock): When this triggers, you may put the top card of your deck into your Stock.',
-        'Soul': '', #You should learn this one yourself
-        '2': '' #thanks, HOTC
-    }
+    name = cardinfo['name']
+    color = cardinfo['color']
+    cardtype = cardinfo['cardtype']
+    triggers = cardinfo['triggers']
+    text = cardinfo['text']
+    traits = cardinfo['traits']
 
-    #setup pillow
     im = Image.open(os.path.join(path, filename))
+    im = im.resize(IMAGESIZE, resample=Image.BILINEAR)
     #rotate climax cards 90 degrees counterclockwise
     if (cardtype == 'Climax'):
         im = im.rotate(90, expand = 1)
     font = ImageFont.truetype('georgia.ttf', size=14)
     draw = ImageDraw.Draw(im)
-
-    def splitText(draw, text, font):
-        parts = []
-        effects = text.split('\n')
-        for effect in effects:
-            parts.append(splitLines(draw, effect, font))
-        return '\n'.join(parts)
-
-    def splitLines(draw, text, font):
-        lines = []
-        words = text.split()
-        while(len(words) > 0):
-            width = draw.textsize(words[0], font)[0]
-            c = 1
-            while (width < int(effectAreaWidth*im.size[0])):
-                c += 1
-                if (c > len(words)):
-                    break
-                width = draw.textsize(' '.join(words[0:c]), font)[0]
-            c -= 1
-            lines.append(' '.join(words[0:c]))
-            words = words[c:]
-        return '\n'.join(lines)
 
     #set some anchors
     if (cardtype == 'Character'):
@@ -114,6 +80,29 @@ if __name__ == '__main__':
         nameAnchorCenter = 0.7735
         nameAreaWidth = 0.3248
         nameAreaHeight = 0.06
+
+    def splitText(draw, text, font):
+        parts = []
+        effects = text.split('\n')
+        for effect in effects:
+            parts.append(splitLines(draw, effect, font))
+        return '\n'.join(parts)
+
+    def splitLines(draw, text, font):
+        lines = []
+        words = text.split()
+        while(len(words) > 0):
+            width = draw.textsize(words[0], font)[0]
+            c = 1
+            while (width < int(effectAreaWidth*im.size[0])):
+                c += 1
+                if (c > len(words)):
+                    break
+                width = draw.textsize(' '.join(words[0:c]), font)[0]
+            c -= 1
+            lines.append(' '.join(words[0:c]))
+            words = words[c:]
+        return '\n'.join(lines)
 
     #add reminder text for Climax cards, since HOTC leaves it out
     if cardtype == 'Climax':
@@ -197,3 +186,44 @@ if __name__ == '__main__':
     with open(os.path.join(path, filename.split('.')[0]+ ' EN.jpg'), 'wb') as f:
         im.save(f, format='jpeg')
     #im.save(os.path.join(path, filename.split('.')[0]+ " EN.jpg"))
+
+#get some card text
+def getCardText(cardno):
+    r = requests.get('https://www.heartofthecards.com/code/cardlist.html?card=WS_' + cardno)
+    soup = BeautifulSoup(r.text, 'html.parser')
+    text = str(soup.find_all('td', class_='cards3')[2]).replace('<br/>','\n') #use a sensible linebreak character (requests or bs4 handles closing <br> tag for you)
+    text = re.sub('<[^<]+?>','',text) #remove all html tags
+    #this line replaces (x) with the matching unicode circled number version
+    #text = re.sub('\((\d)\)', lambda x: STOCKNUMBERS[int(x[1])], text)
+    name = soup.find('div', class_='tcgrcontainer').next_sibling.next_sibling
+    name = name.next_element.next_sibling.next_element.next_element.next_element.next_element
+    cards2 = soup.find_all('td', class_='cards2')
+    color = cards2[3].contents[0]
+    cardtype = cards2[5].contents[0]
+    triggers = []
+    #hotc uses two standards here
+    if (len(cards2) == 12):
+        traits = cards2[11].contents[0].split(',')
+    if (len(cards2) == 13):
+        traits = [cards2[10].contents[0], cards2[12].contents[0]]
+    #if climax, find triggers
+    if (cardtype == "Climax"):
+        if (len(cards2) == 12):
+            triggers = cards2[10].contents[0].split()
+        if (len(cards2) == 13):
+            triggers = cards2[11].contents[0].split()
+    return {'text':text, 'name':name, 'color':color, 'cardtype':cardtype, 'traits':traits, 'triggers':triggers}
+
+def translateCard(filename):
+    path, filename = os.path.split(filename)
+    cardno = filename.split('.')[0].replace('_', '/')
+    cardinfo = getCardText(cardno)
+    renderCard(path, filename, cardinfo)
+
+if __name__ == '__main__':
+    if (os.path.isdir(sys.argv[1])):
+        filenames = os.listdir(sys.argv[1])
+        for filename in filenames:
+            translateCard(os.path.join(sys.argv[1], filename))
+    else:
+        translateCard(sys.argv[1])
