@@ -11,9 +11,14 @@ import sys
 import os.path
 import html
 
+TEXTFONT = 'georgia.ttf'
+SYMBOLSFONT = 'meiryo.ttc'
+
 IMAGESIZE = (500, 702)
 
 STOCKNUMBERS = '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
+EXPERIMENTAL = True
+SYMBOLS = True
 
 COLORS = {
     'Yellow': (112, 124, 26),
@@ -52,7 +57,9 @@ def renderCard(path, filename, cardinfo, output=''):
     #rotate climax cards 90 degrees counterclockwise
     if (cardtype == 'Climax'):
         im = im.rotate(90, expand = 1)
-    font = ImageFont.truetype('georgia.ttf', size=14)
+    font = ImageFont.truetype(TEXTFONT, size=14)
+    if SYMBOLS:
+        symbolsFont = ImageFont.truetype(SYMBOLSFONT, size=14)
     draw = ImageDraw.Draw(im)
 
     #set some anchors
@@ -99,6 +106,8 @@ def renderCard(path, filename, cardinfo, output=''):
                 if (c > len(words)):
                     break
                 width = draw.textsize(' '.join(words[0:c]), font)[0]
+                #if (SYMBOLS and (words[c-1][-1:] in STOCKNUMBERS)):
+                #    words[c-1] = words[c-1][:-1] + '     ' #make some space for a stock icon
             c -= 1
             lines.append(' '.join(words[0:c]))
             words = words[c:]
@@ -119,6 +128,8 @@ def renderCard(path, filename, cardinfo, output=''):
         im_blur = im.copy().filter(ImageFilter.GaussianBlur(5))
         white = Image.new('RGB', im.size, (255, 255, 255))
         im_blur = Image.blend(im_blur, white, 0.3)
+        if (SYMBOLS):
+            im_copy = im_blur.copy()
         im_blur = im_blur.crop((int(effectAnchorLeft * im.size[0]),
                                 int(effectAnchorBottom * im.size[1]) - textheight,
                                 int((effectAnchorLeft + effectAreaWidth) *im.size[0]),
@@ -138,7 +149,8 @@ def renderCard(path, filename, cardinfo, output=''):
         for i in range(len(lines)):
             if lines[i].startswith('[A]') or lines[i].startswith('[C]') or lines[i].startswith('[S]'):
                 offset = draw.multiline_textsize('#' + '\n.'*(len(lines)-i-1), font)[1]
-                draw.rectangle((effectAnchorLeft*im.size[0]-1, (effectAnchorBottom*im.size[1])-offset-0.5, effectAnchorLeft*im.size[0]+20, (effectAnchorBottom * im.size[1]) - offset + 15), fill=(0, 0, 0))
+                draw.rectangle((effectAnchorLeft*im.size[0]-1, (effectAnchorBottom*im.size[1])-offset+0.5, effectAnchorLeft*im.size[0]+20, (effectAnchorBottom * im.size[1]) - offset + 14), fill=(0, 0, 0))
+                draw.rectangle((effectAnchorLeft*im.size[0], (effectAnchorBottom*im.size[1])-offset-0.5, effectAnchorLeft*im.size[0]+19, (effectAnchorBottom * im.size[1]) - offset + 15), fill=(0, 0, 0))
                 draw.text((effectAnchorLeft*im.size[0], (effectAnchorBottom*im.size[1])-offset-1), lines[i][0:3], fill=(255, 255, 255), font=font)
                 draw.text((effectAnchorLeft*im.size[0]+1, (effectAnchorBottom*im.size[1])-offset-1), lines[i][0:3], fill=(255, 255, 255), font=font)
             if 'CX COMBO' in lines[i]:
@@ -154,13 +166,30 @@ def renderCard(path, filename, cardinfo, output=''):
                     textsize = draw.multiline_textsize(lines[i][0:j+3] + '\n'*(len(lines)-i-1), font)
                     offset = textsize[1]
                     width = textsize[0]
-                    draw.rectangle((effectAnchorLeft*im.size[0]-1+width, (effectAnchorBottom*im.size[1])-offset-0.5, effectAnchorLeft*im.size[0]+width+20, (effectAnchorBottom * im.size[1]) - offset + 15), fill=(0, 0, 0))
+                    draw.rectangle((effectAnchorLeft*im.size[0]-1+width, (effectAnchorBottom*im.size[1])-offset+0.5, effectAnchorLeft*im.size[0]+width+20, (effectAnchorBottom * im.size[1]) - offset + 14), fill=(0, 0, 0))
+                    draw.rectangle((effectAnchorLeft*im.size[0]+width, (effectAnchorBottom*im.size[1])-offset-0.5, effectAnchorLeft*im.size[0]+width+19, (effectAnchorBottom * im.size[1]) - offset + 15), fill=(0, 0, 0))
                     draw.text((effectAnchorLeft*im.size[0]+width, (effectAnchorBottom*im.size[1])-offset-1), lines[i][j+3:j+6], fill=(255, 255, 255), font=font)
                     draw.text((effectAnchorLeft*im.size[0]+width+1, (effectAnchorBottom*im.size[1])-offset-1), lines[i][j+3:j+6], fill=(255, 255, 255), font=font)
+            if (SYMBOLS):
+                match = re.search('['+STOCKNUMBERS+']', lines[i])
+                if (match):
+                    print("holla")
+                    offset = draw.multiline_textsize(lines[i][0:match.start()] + '\n.'*(len(lines)-i-1), font)
+                    mask = Image.new('1', im.size)
+                    maskDraw = ImageDraw.Draw(mask)
+                    maskDraw.rectangle((effectAnchorLeft*im.size[0]+offset[0], effectAnchorBottom*im.size[1]-offset[1], effectAnchorLeft*im.size[0]+offset[0]+16, effectAnchorBottom*im.size[1]-offset[1]+15), fill=(1))
+                    im.paste(im_copy, mask=mask)
+                    draw.text((effectAnchorLeft*im.size[0]+offset[0], effectAnchorBottom*im.size[1]-offset[1]-3), lines[i][match.start():match.end()], fill=(255,255,255), font=symbolsFont)
+                    draw.text((effectAnchorLeft*im.size[0]+offset[0]+3, effectAnchorBottom*im.size[1]-offset[1]-1), lines[i][match.start():match.end()], fill=(255,255,255), font=symbolsFont)
+                    draw.text((effectAnchorLeft*im.size[0]+offset[0], effectAnchorBottom*im.size[1]-offset[1]-3), lines[i][match.start():match.end()], fill=(255,255,255), font=symbolsFont)
+                    draw.text((effectAnchorLeft*im.size[0]+offset[0]+3, effectAnchorBottom*im.size[1]-offset[1]-1), lines[i][match.start():match.end()], fill=(255,255,255), font=symbolsFont)
+                    draw.text((effectAnchorLeft*im.size[0]+offset[0]+1, effectAnchorBottom*im.size[1]-offset[1]-2), lines[i][match.start():match.end()], fill=(0,0,0), font=symbolsFont)
+                    draw.text((effectAnchorLeft*im.size[0]+offset[0]+2, effectAnchorBottom*im.size[1]-offset[1]-2), lines[i][match.start():match.end()], fill=(0,0,0), font=symbolsFont)
+
     #--end the 'if card text isn't --None--' block--
 
     #name
-    font = ImageFont.truetype('georgia.ttf', size=24)
+    font = ImageFont.truetype(TEXTFONT, size=24)
     nameCanvas = Image.new('RGBA', draw.textsize(name, font), COLORS[color])
     nameCanvasDraw = ImageDraw.Draw(nameCanvas)
     nameCanvasDraw.text((0,0), name, (255, 255, 255), font)
@@ -168,16 +197,22 @@ def renderCard(path, filename, cardinfo, output=''):
     im.paste(nameCanvas,(int((nameAnchorCenter-((nameCanvas.size[0]/2)/im.size[0]))*im.size[0]), int(nameAnchorTop*im.size[1])+1))
 
     #traits
-    font = ImageFont.truetype('georgia.ttf', size=14)
+    font = ImageFont.truetype(TEXTFONT, size=14)
     for i in range(len(traits)):
-        if traits[i] != "None":
+        if traits[i] != "None":           
             trait = traits[i].split('(')[1][:-1]
             traitCanvas = Image.new('RGBA', draw.textsize(trait, font), (238, 222, 52))
             traitCanvasDraw = ImageDraw.Draw(traitCanvas)
             traitCanvasDraw.text((0,0), trait, (0,0,0), font)
             traitCanvas = traitCanvas.resize((min(int(0.2*im.size[0]), traitCanvas.size[0]), 14))
-            draw.rectangle((int((0.7020-(0.2340*i))*im.size[0]), int(0.9452*im.size[1])+2, int((0.9020-(0.2340*i))*im.size[0]), int(0.9644*im.size[1])+2), fill=(238, 222, 52))
-            im.paste(traitCanvas,(int((0.8020-(0.2340*i)-((traitCanvas.size[0]/2)/im.size[0]))*im.size[0]), int(0.9452*im.size[1])+2))
+            if (EXPERIMENTAL):
+                slot = Image.open('slot-trait.png')
+                im.paste(slot,((int((0.696-(0.23*i))*im.size[0]),  int(0.9452*im.size[1]))), mask=slot)
+                imDraw = ImageDraw.Draw(im)
+                imDraw.text((int((0.8020-(0.2340*i)-((traitCanvas.size[0]/2)/im.size[0]))*im.size[0]), int(0.9452*im.size[1])+2), trait, (0,0,0), font)
+            else:
+                draw.rectangle((int((0.7020-(0.2340*i))*im.size[0]), int(0.9452*im.size[1])+2, int((0.9020-(0.2340*i))*im.size[0]), int(0.9644*im.size[1])+2), fill=(238, 222, 52))
+                im.paste(traitCanvas,(int((0.8020-(0.2340*i)-((traitCanvas.size[0]/2)/im.size[0]))*im.size[0]), int(0.9452*im.size[1])+2))
 
     #rotate climax cards back to normal orientation
     if (cardtype == 'Climax'):
@@ -193,8 +228,9 @@ def getCardText(cardno):
     soup = BeautifulSoup(r.text, 'html.parser')
     text = str(soup.find_all('td', class_='cards3')[2]).replace('<br/>','\n') #use a sensible linebreak character (requests or bs4 handles closing <br> tag for you)
     text = re.sub('<[^<]+?>','',text) #remove all html tags
-    #this line replaces (x) with the matching unicode circled number version
-    #text = re.sub('\((\d)\)', lambda x: STOCKNUMBERS[int(x[1])], text)
+    #this line replaces (x) with the matching unicode circled number version. This doesnt work unless your font supports them. Liberation doesn't.
+    if (SYMBOLS):
+        text = re.sub('\((\d)\)', lambda x: STOCKNUMBERS[int(x[1])], text)
     name = soup.find('div', class_='tcgrcontainer').next_sibling.next_sibling
     name = name.next_element.next_sibling.next_element.next_element.next_element.next_element
     cards2 = soup.find_all('td', class_='cards2')
@@ -214,11 +250,11 @@ def getCardText(cardno):
             triggers = cards2[11].contents[0].split()
     return {'text':text, 'name':name, 'color':color, 'cardtype':cardtype, 'traits':traits, 'triggers':triggers}
 
-def translateCard(filename):
+def translateCard(filename, output=''):
     path, filename = os.path.split(filename)
     cardno = filename.split('.')[0].replace('_', '/')
     cardinfo = getCardText(cardno)
-    renderCard(path, filename, cardinfo, output='./EN')
+    renderCard(path, filename, cardinfo, output=output)
 
 if __name__ == '__main__':
     if (os.path.isdir(sys.argv[1])):
@@ -235,6 +271,6 @@ if __name__ == '__main__':
                     print('(%d/%d) Skipping %s, already done.' % (index, len(filenames) - 1, filename))
                     continue
                 print('(%d/%d) Translating %s' % (index, len(filenames) - 1, filename))
-                translateCard(os.path.join(sys.argv[1], filename))
+                translateCard(os.path.join(sys.argv[1], filename, './EN'))
     else:
         translateCard(sys.argv[1])
