@@ -12,6 +12,11 @@ If you're using an operating system that doesn't allow slashes in file names (th
 As an example, *Serval, Curious About Everything* is card no. **KMN/W51-001** and as such the source file should be `KMN_W51-001.jpg`.
 For best results, the rarity symbol (including *TD* rarity) should not be included. (Note that trial deck cards *should* retain the T prefix on their card numbers).
 
+Unfortunately Microsoft is very unclear on the licensing rights for `meiryo.ttc`, and the same goes for `georgia.ttf`, so please provide those yourself or replace them with suitable fonts of your choice.
+
+As for the prebuilt Windows binary, you can simply drag-and-drop individual card images or folders onto the .exe to run it.
+(fonts come included)
+
 ## Usage notes and thanks
 
 Thanks to [Heart of the Cards](https://heartofthecards.com/), whom I source the translations from.
