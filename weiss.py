@@ -18,8 +18,7 @@ LINESPACING = 3
 IMAGESIZE = (500, 702)
 
 STOCKNUMBERS = '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
-EXPERIMENTAL = True
-SYMBOLS = True
+SYMBOLS = True #set to false if you prefer (2) over ②
 
 COLORS = {
     'Yellow': (112, 124, 26),
@@ -36,11 +35,11 @@ TRIGGERS = {
     'Shot': '\n(Shot): If this attack gets damage canceled, deal one damage. (This damage can be canceled).',
     'Treasure': '\n(Treasure): When this triggers, return it to your hand. You may put the top card of your deck into your stock.',
     'Door': '\n(Door): When this triggers, you may return one character from your Waiting Room to your hand.',
-    'Salvage': '\n(Door): When this triggers, you may return one character from your Waiting Room to your hand.',
+    'Salvage': '\n(Door): When this triggers, you may return one character from your Waiting Room to your hand.', #thanks, HOTC
     'Gate': '\n(Gate): When this triggers, you may return one climax from your Waiting Room to your hand.',
     'Stock': '\n(Stock): When this triggers, you may put the top card of your deck into your Stock.',
-    'Soul': '', #You should learn this one yourself
-    '2': '' #thanks, HOTC
+    'Soul': '', #You should learn this one yourself. Also it doesn't have reminder text on real English cards either.
+    '2': '' #thanks again, HOTC
 }
 
 #setup pillow
@@ -60,34 +59,34 @@ def renderCard(path, filename, cardinfo, output=''):
         im = im.rotate(90, expand = 1)
     font = ImageFont.truetype(TEXTFONT, size=14)
     if SYMBOLS:
-        symbolsFont = ImageFont.truetype(SYMBOLSFONT, size=14)
+        symbolsFont = ImageFont.truetype(SYMBOLSFONT, size=16)
     draw = ImageDraw.Draw(im)
 
     #set some anchors
     if (cardtype == 'Character'):
-        effectAnchorBottom = 0.876
-        effectAnchorLeft = 0.05
-        effectAreaWidth = 0.9
-        nameAnchorTop = 0.8986
-        nameAnchorCenter = 0.577
-        nameAreaWidth = 0.466
-        nameAreaHeight = 0.0356
+        effectAnchorBottom = 0.876 * im.size[1]
+        effectAnchorLeft = 0.05 * im.size[0]
+        effectAreaWidth = 0.9 * im.size[0]
+        nameAnchorTop = 0.8986 * im.size[1]
+        nameAnchorCenter = 0.577 * im.size[0]
+        nameAreaWidth = 0.466 * im.size[0]
+        nameAreaHeight = 0.0356 * im.size[1]
     elif (cardtype == 'Event'):
-        effectAnchorBottom = 0.9
-        effectAnchorLeft = 0.05
-        effectAreaWidth = 0.9
-        nameAnchorTop = 0.9205
-        nameAnchorCenter = 0.577
-        nameAreaWidth = 0.466
-        nameAreaHeight = 0.0356
+        effectAnchorBottom = 0.9 * im.size[1]
+        effectAnchorLeft = 0.05 * im.size[0]
+        effectAreaWidth = 0.9 * im.size[0]
+        nameAnchorTop = 0.9205 * im.size[1]
+        nameAnchorCenter = 0.577 * im.size[0]
+        nameAreaWidth = 0.466 * im.size[0]
+        nameAreaHeight = 0.0356 * im.size[1]
     elif (cardtype == 'Climax'):
-        effectAnchorBottom = 0.968
-        effectAnchorLeft = 0.0228
-        effectAreaWidth = 0.3462
-        nameAnchorTop = 0.888
-        nameAnchorCenter = 0.7735
-        nameAreaWidth = 0.3248
-        nameAreaHeight = 0.06
+        effectAnchorBottom = 0.968 * im.size[1]
+        effectAnchorLeft = 0.0228 * im.size[0]
+        effectAreaWidth = 0.3462 * im.size[0]
+        nameAnchorTop = 0.888 * im.size[1]
+        nameAnchorCenter = 0.7735 * im.size[0]
+        nameAreaWidth = 0.3248 * im.size[0]
+        nameAreaHeight = 0.06 * im.size[1]
 
     def splitText(draw, text, font):
         parts = []
@@ -102,7 +101,7 @@ def renderCard(path, filename, cardinfo, output=''):
         while(len(words) > 0):
             width = draw.textsize(words[0], font)[0]
             c = 1
-            while (width < int(effectAreaWidth*im.size[0])):
+            while (width < int(effectAreaWidth)):
                 c += 1
                 if (c > len(words)):
                     break
@@ -111,6 +110,19 @@ def renderCard(path, filename, cardinfo, output=''):
             lines.append(' '.join(words[0:c]))
             words = words[c:]
         return '\n'.join(lines)
+
+    def drawOutlined(canvas, position, width, text, font):
+        x, y = position
+        if (len(text.split('\n')) > 1):
+            for xo, yo in [(-1, -1), (-1, 1), (width, -1), (width, 1)]:
+                canvas.multiline_text((x+xo, y+yo), text, fill=(255, 255, 255), font=font, spacing=LINESPACING)
+            for i in range(width):
+                canvas.multiline_text((x+i, y), text, fill=(0, 0, 0), font=font, spacing=LINESPACING)
+        else:
+            for xo, yo in [(-1, -1), (-1, 1), (width, -1), (width, 1)]:
+                canvas.text((x+xo, y+yo), text, fill=(255, 255, 255), font=font)
+            for i in range(width):
+                canvas.text((x+i, y), text, fill=(0, 0, 0), font=font)
 
     #add reminder text for Climax cards, since HOTC leaves it out
     if cardtype == 'Climax':
@@ -129,61 +141,51 @@ def renderCard(path, filename, cardinfo, output=''):
         im_blur = Image.blend(im_blur, white, 0.3)
         if (SYMBOLS):
             im_copy = im_blur.copy()
-        im_blur = im_blur.crop((int(effectAnchorLeft * im.size[0]),
-                                int(effectAnchorBottom * im.size[1]) - textheight,
-                                int((effectAnchorLeft + effectAreaWidth) *im.size[0]),
-                                int(effectAnchorBottom * im.size[1])))
-        im.paste(im_blur,(int(effectAnchorLeft * im.size[0]),int(effectAnchorBottom * im.size[1]) - textheight))
+        im_blur = im_blur.crop((int(effectAnchorLeft),
+                                int(effectAnchorBottom) - textheight,
+                                int((effectAnchorLeft + effectAreaWidth)),
+                                int(effectAnchorBottom)))
+        im.paste(im_blur,(int(effectAnchorLeft),int(effectAnchorBottom) - textheight))
 
         #draw the english effect text
-        draw.multiline_text((int(effectAnchorLeft*im.size[0] - 1), int(effectAnchorBottom * im.size[1]) - textheight - 1), text, fill=(255, 255, 255), font=font, spacing=LINESPACING)
-        draw.multiline_text((int(effectAnchorLeft*im.size[0] - 1), int(effectAnchorBottom * im.size[1]) - textheight + 1), text, fill=(255, 255, 255), font=font, spacing=LINESPACING)
-        draw.multiline_text((int(effectAnchorLeft*im.size[0] + 2), int(effectAnchorBottom * im.size[1]) - textheight - 1), text, fill=(255, 255, 255), font=font, spacing=LINESPACING)
-        draw.multiline_text((int(effectAnchorLeft*im.size[0] + 2), int(effectAnchorBottom * im.size[1]) - textheight + 1), text, fill=(255, 255, 255), font=font, spacing=LINESPACING)
-        draw.multiline_text((int(effectAnchorLeft*im.size[0]), int(effectAnchorBottom * im.size[1]) - textheight), text, fill=(128, 128, 128), font=font, spacing=LINESPACING)
-        draw.multiline_text((int(effectAnchorLeft*im.size[0] + 1), int(effectAnchorBottom * im.size[1]) - textheight), text, fill=(0, 0, 0), font=font, spacing=LINESPACING)
+        drawOutlined(draw, (int(effectAnchorLeft), int(effectAnchorBottom) - textheight), 2, text, font)
 
         #effect formatting bonuses
         lines = text.split('\n')
         for i in range(len(lines)):
             if lines[i].startswith('[A]') or lines[i].startswith('[C]') or lines[i].startswith('[S]'):
                 offset = draw.multiline_textsize('#' + '\n.'*(len(lines)-i-1), font, spacing=LINESPACING)[1]
-                draw.rectangle((effectAnchorLeft*im.size[0]-1, (effectAnchorBottom*im.size[1])-offset+2, effectAnchorLeft*im.size[0]+20, (effectAnchorBottom * im.size[1]) - offset + 16), fill=(0, 0, 0))
-                draw.rectangle((effectAnchorLeft*im.size[0], (effectAnchorBottom*im.size[1])-offset+1, effectAnchorLeft*im.size[0]+19, (effectAnchorBottom * im.size[1]) - offset + 17), fill=(0, 0, 0))
-                draw.text((effectAnchorLeft*im.size[0], (effectAnchorBottom*im.size[1])-offset-1), lines[i][0:3], fill=(255, 255, 255), font=font)
-                draw.text((effectAnchorLeft*im.size[0]+1, (effectAnchorBottom*im.size[1])-offset-1), lines[i][0:3], fill=(255, 255, 255), font=font)
+                draw.rectangle((effectAnchorLeft-1, effectAnchorBottom-offset+2, effectAnchorLeft+20, effectAnchorBottom - offset + 16), fill=(0, 0, 0))
+                draw.rectangle((effectAnchorLeft, effectAnchorBottom-offset+1, effectAnchorLeft+19, effectAnchorBottom - offset + 17), fill=(0, 0, 0))
+                draw.text((effectAnchorLeft, effectAnchorBottom-offset-1), lines[i][0:3], fill=(255, 255, 255), font=font)
+                draw.text((effectAnchorLeft+1, effectAnchorBottom-offset-1), lines[i][0:3], fill=(255, 255, 255), font=font)
             if 'CX COMBO' in lines[i]:
                 textsize = draw.multiline_textsize('CX COMBO' + '\n'*(len(lines)-i-1), font, spacing=LINESPACING)
                 offset = textsize[1]
                 width = textsize[0]
-                draw.rectangle((effectAnchorLeft*im.size[0]+23, (effectAnchorBottom*im.size[1])-offset+1, effectAnchorLeft*im.size[0]+width+23, (effectAnchorBottom * im.size[1]) - offset + 17), fill=(255, 0, 0))
-                draw.text((effectAnchorLeft*im.size[0]+23, (effectAnchorBottom*im.size[1])-offset), 'CX COMBO', fill=(255, 255, 255), font=font)
-                draw.text((effectAnchorLeft*im.size[0]+24, (effectAnchorBottom*im.size[1])-offset), 'CX COMBO', fill=(255, 255, 255), font=font)
+                draw.rectangle((effectAnchorLeft+23, effectAnchorBottom-offset+1, effectAnchorLeft+width+23, effectAnchorBottom - offset + 17), fill=(255, 0, 0))
+                draw.text((effectAnchorLeft+23, effectAnchorBottom-offset), 'CX COMBO', fill=(255, 255, 255), font=font)
+                draw.text((effectAnchorLeft+24, effectAnchorBottom-offset), 'CX COMBO', fill=(255, 255, 255), font=font)
             if (re.search('\[\w\]', lines[i][3:]) != None):
                 positions = [m.start() for m in re.finditer('\[\w\]', lines[i][3:])]
                 for j in positions:
                     textsize = draw.multiline_textsize(lines[i][0:j+3] + '\n'*(len(lines)-i-1), font, spacing=LINESPACING)
                     offset = textsize[1]
                     width = textsize[0]
-                    draw.rectangle((effectAnchorLeft*im.size[0]-1+width, (effectAnchorBottom*im.size[1])-offset+0.5, effectAnchorLeft*im.size[0]+width+20, (effectAnchorBottom * im.size[1]) - offset + 14), fill=(0, 0, 0))
-                    draw.rectangle((effectAnchorLeft*im.size[0]+width, (effectAnchorBottom*im.size[1])-offset-0.5, effectAnchorLeft*im.size[0]+width+19, (effectAnchorBottom * im.size[1]) - offset + 15), fill=(0, 0, 0))
-                    draw.text((effectAnchorLeft*im.size[0]+width, (effectAnchorBottom*im.size[1])-offset-1), lines[i][j+3:j+6], fill=(255, 255, 255), font=font)
-                    draw.text((effectAnchorLeft*im.size[0]+width+1, (effectAnchorBottom*im.size[1])-offset-1), lines[i][j+3:j+6], fill=(255, 255, 255), font=font)
+                    draw.rectangle((effectAnchorLeft-1+width, effectAnchorBottom-offset+2, effectAnchorLeft+width+20, effectAnchorBottom - offset + 16), fill=(0, 0, 0))
+                    draw.rectangle((effectAnchorLeft+width, effectAnchorBottom-offset+1, effectAnchorLeft+width+19, effectAnchorBottom - offset + 17), fill=(0, 0, 0))
+                    draw.text((effectAnchorLeft+width, effectAnchorBottom-offset-1), lines[i][j+3:j+6], fill=(255, 255, 255), font=font)
+                    draw.text((effectAnchorLeft+width+1, effectAnchorBottom-offset-1), lines[i][j+3:j+6], fill=(255, 255, 255), font=font)
             if (SYMBOLS):
                 match = re.search('['+STOCKNUMBERS+']', lines[i])
                 if (match):
                     offset = draw.multiline_textsize(lines[i][0:match.start()] + '\n.'*(len(lines)-i-1), font, spacing=LINESPACING)
-                    fontOffset = 0.5*(draw.textsize(STOCKNUMBERS[0], symbolsFont)[1] - draw.textsize('A', font)[1])
+                    fontOffset = (0.5*(draw.textsize(STOCKNUMBERS[0], symbolsFont)[1] - draw.textsize('A', font)[1]))+LINESPACING
                     mask = Image.new('1', im.size)
                     maskDraw = ImageDraw.Draw(mask)
-                    maskDraw.rectangle((effectAnchorLeft*im.size[0]+offset[0], effectAnchorBottom*im.size[1]-offset[1], effectAnchorLeft*im.size[0]+offset[0]+16, effectAnchorBottom*im.size[1]-offset[1]+15), fill=(1))
+                    maskDraw.rectangle((effectAnchorLeft+offset[0], effectAnchorBottom-offset[1], effectAnchorLeft+offset[0]+16, effectAnchorBottom-offset[1]+15), fill=(1))
                     im.paste(im_copy, mask=mask)
-                    draw.text((effectAnchorLeft*im.size[0]+offset[0], effectAnchorBottom*im.size[1]-offset[1]-3-fontOffset), lines[i][match.start():match.end()], fill=(255,255,255), font=symbolsFont)
-                    draw.text((effectAnchorLeft*im.size[0]+offset[0]+3, effectAnchorBottom*im.size[1]-offset[1]-1-fontOffset), lines[i][match.start():match.end()], fill=(255,255,255), font=symbolsFont)
-                    draw.text((effectAnchorLeft*im.size[0]+offset[0], effectAnchorBottom*im.size[1]-offset[1]-3-fontOffset), lines[i][match.start():match.end()], fill=(255,255,255), font=symbolsFont)
-                    draw.text((effectAnchorLeft*im.size[0]+offset[0]+3, effectAnchorBottom*im.size[1]-offset[1]-1-fontOffset), lines[i][match.start():match.end()], fill=(255,255,255), font=symbolsFont)
-                    draw.text((effectAnchorLeft*im.size[0]+offset[0]+1, effectAnchorBottom*im.size[1]-offset[1]-2-fontOffset), lines[i][match.start():match.end()], fill=(0,0,0), font=symbolsFont)
-                    draw.text((effectAnchorLeft*im.size[0]+offset[0]+2, effectAnchorBottom*im.size[1]-offset[1]-2-fontOffset), lines[i][match.start():match.end()], fill=(0,0,0), font=symbolsFont)
+                    drawOutlined(draw,(effectAnchorLeft+offset[0], effectAnchorBottom-offset[1]-fontOffset), 2, lines[i][match.start():match.end()], symbolsFont)
 
     #--end the 'if card text isn't --None--' block--
 
@@ -192,8 +194,8 @@ def renderCard(path, filename, cardinfo, output=''):
     nameCanvas = Image.new('RGBA', draw.textsize(name, font), COLORS[color])
     nameCanvasDraw = ImageDraw.Draw(nameCanvas)
     nameCanvasDraw.text((0,0), name, (255, 255, 255), font)
-    nameCanvas = nameCanvas.resize((min(int(nameAreaWidth*im.size[0]), nameCanvas.size[0]), int(nameAreaHeight*im.size[1])), resample=Image.BILINEAR)
-    im.paste(nameCanvas,(int((nameAnchorCenter-((nameCanvas.size[0]/2)/im.size[0]))*im.size[0]), int(nameAnchorTop*im.size[1])+1))
+    nameCanvas = nameCanvas.resize((min(int(nameAreaWidth), nameCanvas.size[0]), int(nameAreaHeight)), resample=Image.BILINEAR)
+    im.paste(nameCanvas,(int((nameAnchorCenter-((nameCanvas.size[0]/2)))), int(nameAnchorTop)+1))
 
     #traits
     font = ImageFont.truetype(TEXTFONT, size=14)
@@ -204,14 +206,10 @@ def renderCard(path, filename, cardinfo, output=''):
             traitCanvasDraw = ImageDraw.Draw(traitCanvas)
             traitCanvasDraw.text((0,0), trait, (0,0,0), font)
             traitCanvas = traitCanvas.resize((min(int(0.2*im.size[0]), traitCanvas.size[0]), 14))
-            if (EXPERIMENTAL):
-                slot = Image.open('slot-trait.png')
-                im.paste(slot,((int((0.696-(0.23*i))*im.size[0]),  int(0.9452*im.size[1]))), mask=slot)
-                imDraw = ImageDraw.Draw(im)
-                imDraw.text((int((0.8020-(0.2340*i)-((traitCanvas.size[0]/2)/im.size[0]))*im.size[0]), int(0.9452*im.size[1])), trait, (0,0,0), font)
-            else:
-                draw.rectangle((int((0.7020-(0.2340*i))*im.size[0]), int(0.9452*im.size[1])+2, int((0.9020-(0.2340*i))*im.size[0]), int(0.9644*im.size[1])+2), fill=(238, 222, 52))
-                im.paste(traitCanvas,(int((0.8020-(0.2340*i)-((traitCanvas.size[0]/2)/im.size[0]))*im.size[0]), int(0.9452*im.size[1])+2))
+            slot = Image.open('slot-trait.png')
+            im.paste(slot,((int((0.696-(0.23*i))*im.size[0]),  int(0.9452*im.size[1]))), mask=slot)
+            imDraw = ImageDraw.Draw(im)
+            imDraw.text((int((0.8020-(0.2340*i)-((traitCanvas.size[0]/2)/im.size[0]))*im.size[0]), int(0.9452*im.size[1])), trait, (0,0,0), font)
 
     #rotate climax cards back to normal orientation
     if (cardtype == 'Climax'):
@@ -229,7 +227,8 @@ def getCardText(cardno):
     text = re.sub('<[^<]+?>','',text) #remove all html tags
     #this line replaces (x) with the matching unicode circled number version.
     if (SYMBOLS):
-        text = re.sub('\((\d)\)', lambda x: STOCKNUMBERS[int(x[1])] + '..', text)
+        text = re.sub('\((\d)\)', lambda x: STOCKNUMBERS[int(x[1])] + '...', text)
+        #extra periods to space the symbol out becasue emspace renders as tofu and I'm too lazy to make drawtext scale automatically for now.
     name = soup.find('div', class_='tcgrcontainer').next_sibling.next_sibling
     name = name.next_element.next_sibling.next_element.next_element.next_element.next_element
     cards2 = soup.find_all('td', class_='cards2')
