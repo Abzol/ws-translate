@@ -4,6 +4,7 @@ from PIL import Image
 from PIL import ImageFilter
 from PIL import ImageDraw
 from PIL import ImageFont
+from PIL import ImageOps
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -202,14 +203,21 @@ def renderCard(path, filename, cardinfo, output=''):
     for i in range(len(traits)):
         if traits[i] != "None":           
             trait = traits[i].split('(')[1][:-1]
-            traitCanvas = Image.new('RGBA', draw.textsize(trait, font), (238, 222, 52))
-            traitCanvasDraw = ImageDraw.Draw(traitCanvas)
-            traitCanvasDraw.text((0,0), trait, (0,0,0), font)
-            traitCanvas = traitCanvas.resize((min(int(0.2*im.size[0]), traitCanvas.size[0]), 14))
             slot = Image.open('slot-trait.png')
-            im.paste(slot,((int((0.696-(0.23*i))*im.size[0]),  int(0.9452*im.size[1]))), mask=slot)
-            imDraw = ImageDraw.Draw(im)
-            imDraw.text((int((0.8020-(0.2340*i)-((traitCanvas.size[0]/2)/im.size[0]))*im.size[0]), int(0.9452*im.size[1])), trait, (0,0,0), font)
+            im.paste(slot,(int((0.696-(0.23*i))*im.size[0]),  int(0.9452*im.size[1])), mask=slot)
+            traitCanvas = Image.new('RGBA', draw.textsize(trait, font), (255, 255, 255))
+            if (traitCanvas.size[0] > 0.2*im.size[0]):
+                traitCanvasDraw = ImageDraw.Draw(traitCanvas)
+                traitCanvasDraw.text((0,0), trait, (0, 0 , 0), font)
+                traitCanvasMask = ImageOps.invert(traitCanvas.convert('L'))
+                traitCanvas.putalpha(traitCanvasMask)
+                traitCanvas = traitCanvas.resize((min(int(0.2*im.size[0]), traitCanvas.size[0]), 14))
+                for _ in range(4):
+                    im.paste(traitCanvas, (int((0.8020-(0.2340*i)-((traitCanvas.size[0]/2)/im.size[0]))*im.size[0]), int(0.9452*im.size[1])), mask=traitCanvas)
+                    #stamp it four times to *really* stick it because the resize makes the transparency completely
+            else:
+                imDraw = ImageDraw.Draw(im)
+                imDraw.text((int((0.8020-(0.2340*i)-((traitCanvas.size[0]/2)/im.size[0]))*im.size[0]), int(0.9452*im.size[1])), trait, (0,0,0), font)
 
     #rotate climax cards back to normal orientation
     if (cardtype == 'Climax'):
