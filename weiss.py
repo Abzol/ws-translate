@@ -277,6 +277,6 @@ if __name__ == '__main__':
                     print('(%d/%d) Skipping %s, already done.' % (index, len(filenames) - 1, filename))
                     continue
                 print('(%d/%d) Translating %s' % (index, len(filenames) - 1, filename))
-                translateCard(os.path.join(sys.argv[1], filename, './EN'))
+                translateCard(os.path.join(sys.argv[1], filename), './EN')
     else:
         translateCard(sys.argv[1])
