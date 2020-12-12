@@ -39,6 +39,7 @@ TRIGGERS = {
     'Salvage': '\n(Door): When this triggers, you may return one character from your Waiting Room to your hand.', #thanks, HOTC
     'Gate': '\n(Gate): When this triggers, you may return one climax from your Waiting Room to your hand.',
     'Stock': '\n(Stock): When this triggers, you may put the top card of your deck into your Stock.',
+    'Choice': '\n(Choice): When this triggers, you may put a character with a (Soul) trigger from your Waiting Room to your hand or your Stock.'
     'Soul': '', #You should learn this one yourself. Also it doesn't have reminder text on real English cards either.
     '2': '' #thanks again, HOTC
 }
